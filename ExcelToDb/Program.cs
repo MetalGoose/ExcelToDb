@@ -13,7 +13,7 @@ namespace ExcelToDb
     {
         public static void Main()
         {
-            var dataSource = "Training.db";
+            var dataSource = "Data Source=TrainingResults.db;Cache=Shared";
             var fileName = @"P-ABL-10-F-4A-0001-ULIP2020-AYXX-2102";
             var fullDataRow = @"ball_block_1.xlsx,1,301balloon.JPG,any,f,2,1,0,0,0,0,0,0,0,0,63.71207350003533,None,None,0,63.71207350003533,None,,P-ABL-10-F-4A-0001-ULIP2020-AYXX-2102,BLAGORODNOVA,001,2020_Dec_04_1156,CMT_balloons_psychopy,2020.2.6,59.98023051910389,";
             var testFilePath = @"E:\Projects\ExcelToDb\ExcelToDb\TestData\P-ABL-10-F-4A-0001-ULIP2020-AYXX-2102_CMT_balloons_psychopy_2020_Dec_04_1156.csv";
@@ -27,8 +27,19 @@ namespace ExcelToDb
             var resultTable = ConvertCsvToDataTable(testFilePath);
             //PrintDataTable(resultTable);
             resultTable = AddKeyColumnsToDataTable(resultTable);
-            PrintDataTable(resultTable);
+            //PrintDataTable(resultTable);
 
+            var dbHandler = new DbHandler(dataSource);
+
+            var headers = new List<string>();
+            foreach (DataColumn column in resultTable.Columns)
+            {
+                headers.Add(column.ColumnName);
+            }
+            dbHandler.CreateTable(headers, "MainTest");
+            dbHandler.InsertData("MainTest", resultTable);
+            dbHandler.PrintTable("MainTest");
+            Console.ReadKey(true);
             //var persons = GetPersons(resultTable);
             //foreach (var personsValue in persons.Values)
             //{
@@ -92,7 +103,7 @@ namespace ExcelToDb
 
         public static DataTable ConvertCsvToDataTable(string strFilePath)
         {
-            var reader = new StreamReader(strFilePath);
+            using var reader = new StreamReader(strFilePath);
             string[] headers = reader.ReadLine().Split(',');
             var dataTable = new DataTable();
             foreach (string header in headers)
@@ -163,6 +174,10 @@ namespace ExcelToDb
 
         public static DataTable AddKeyColumnsToDataTable(DataTable table)
         {
+            if (table.Columns.Contains("id"))
+            {
+                table.Columns["id"].ColumnName = "person_data_key";
+            }
             table.Columns.Add("Id", typeof(Guid));
             table.Columns.Add("PersonId", typeof(Guid));
             return table;
