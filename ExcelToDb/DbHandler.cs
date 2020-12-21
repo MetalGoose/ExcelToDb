@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using System.Text;
 using Microsoft.Data.Sqlite;
 
@@ -9,11 +8,16 @@ namespace ExcelToDb
 {
     public class DbHandler
     {
+        private readonly string _infoMessage = "affected rows: ";
+
+        private readonly bool _isLogActive;
+
         public string ConnectionString { get; }
 
-        public DbHandler(string baseConnectionString)
+        public DbHandler(string baseConnectionString, bool isLogActive = true)
         {
             ConnectionString = new SqliteConnectionStringBuilder(baseConnectionString) { Mode = SqliteOpenMode.ReadWriteCreate }.ToString();
+            _isLogActive = isLogActive;
         }
 
         public void CreateTable(List<string> columnNames, string tableName)
@@ -35,7 +39,8 @@ namespace ExcelToDb
 
             using var initCommand = new SqliteCommand(commandString, connection);
 
-            initCommand.ExecuteNonQuery();
+            var affectedRows = initCommand.ExecuteNonQuery();
+            PrintResult(affectedRows);
         }
 
         public void PrintTable(string tableName)
@@ -64,6 +69,11 @@ namespace ExcelToDb
             }
         }
 
+        /// <summary>
+        /// Insert data from DataTable into database
+        /// </summary>
+        /// <param name="tableName"></param>
+        /// <param name="tableData"></param>
         public void InsertData(string tableName, DataTable tableData)
         {
             using var connection = new SqliteConnection(ConnectionString);
@@ -71,8 +81,10 @@ namespace ExcelToDb
             var builder = new StringBuilder();
             foreach (DataRow row in tableData.Rows)
             {
-                row["Id"] = Guid.NewGuid();
-                row["PersonId"] = Guid.NewGuid();
+                if (string.IsNullOrEmpty(row["Id"].ToString()))
+                {
+                    continue;
+                }
                 for (int i = 0; i < row.ItemArray.Length; i++)
                 {
                     builder.Append(i == row.ItemArray.Length - 1 ? $"'{row.ItemArray[i]}'" : $"'{row.ItemArray[i]}',");
@@ -80,8 +92,18 @@ namespace ExcelToDb
                 var commandString = $@"INSERT INTO {tableName} VALUES ({builder})";
                 using var initCommand = new SqliteCommand(commandString, connection);
 
-                initCommand.ExecuteNonQuery();
+                var affectedRows = initCommand.ExecuteNonQuery();
+                PrintResult(affectedRows);
+
                 builder.Clear();
+            }
+        }
+
+        private void PrintResult(int affectedRowsCount)
+        {
+            if (_isLogActive)
+            {
+                Console.WriteLine($"{_infoMessage}{affectedRowsCount}");
             }
         }
     }
