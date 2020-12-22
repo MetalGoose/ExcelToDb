@@ -26,6 +26,8 @@ namespace ExcelToDb
             #endregion Test data
 
             Directory.CreateDirectory(folderName);
+            Console.WriteLine("Поместите все файлы с данными в папку files, которая находится в корневой папке программы и нажмите любую клавишу.");
+            Console.ReadKey();
             MainProcess(folderName, dataSource, dbName);
         }
 
@@ -154,7 +156,15 @@ namespace ExcelToDb
 
             Console.WriteLine($"Запись данных в {dbName}");
             Console.WriteLine();
-            dbHandler.InsertData("Persons", personDataTable);
+            try
+            {
+                dbHandler.InsertData("Persons", personDataTable);
+            }
+            catch (Exception e)
+            {
+                PrintError(e);
+            }
+            
             consoleSpinner.Turn();
             foreach (DataTable trainingDataTable in trainingDataTables)
             {
@@ -297,12 +307,7 @@ namespace ExcelToDb
                 connection.Open();
 
                 var command = connection.CreateCommand();
-                command.CommandText =
-                @"
-                    SELECT name
-                    FROM user
-                    WHERE id = $id
-                ";
+                command.CommandText = "SELECT name FROM userWHERE id = $id";
                 command.Parameters.AddWithValue("$id", 3);
 
                 using (var reader = command.ExecuteReader())
