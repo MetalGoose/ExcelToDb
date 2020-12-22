@@ -29,6 +29,8 @@ namespace ExcelToDb
             Console.WriteLine("Поместите все файлы с данными в папку files, которая находится в корневой папке программы и нажмите любую клавишу.");
             Console.ReadKey();
             MainProcess(folderName, dataSource, dbName);
+            Console.WriteLine($"Данные добавлены в {dbName}. Нажмите любую клавишу для завершения.");
+            Console.ReadKey();
         }
 
         public static void MainProcess(string folder, string connectionString, string dbName)
